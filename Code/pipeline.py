@@ -60,6 +60,7 @@ class Solution:
 
         return docs, embedding_store, documents  
 
+'''
 if __name__ == "__main__":
     folder_path = '/home/quochuy/Development/Rag/Data_test'
     solution = Solution()
@@ -68,7 +69,7 @@ if __name__ == "__main__":
     print(texts[0:10])
     print(embeddings[0:10])
     print(documents[0:10])
-
+'''
 
     
 

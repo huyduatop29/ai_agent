@@ -15,18 +15,27 @@ class PostgresConnect:
         for i, doc in enumerate(docs):
             # Insert into documents
             self.cur.execute("""
-                INSERT INTO documents (filename, file_directory, source, last_modified, filetype, language)
-                VALUES (%s, %s, %s, %s, %s, %s)
-                RETURNING id;
-            """, (
-                doc.metadata['filename'],
-                doc.metadata['file_directory'],
-                doc.metadata['source'],
-                doc.metadata['last_modified'],
-                doc.metadata['filetype'],
-                doc.metadata['languages'][0]
-            ))
-            document_id = self.cur.fetchone()[0]
+                SELECT id FROM documents
+                WHERE source = %s;
+            """, (doc.metadata['source'],))
+            existing = self.cur.fetchone()
+
+            if existing:
+                document_id = existing[0]
+            else:
+                self.cur.execute("""
+                    INSERT INTO documents (filename, file_directory, source, last_modified, filetype, languages)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                    RETURNING id;
+                """, (
+                    doc.metadata['filename'],
+                    doc.metadata['file_directory'],
+                    doc.metadata['source'],
+                    doc.metadata['last_modified'],
+                    doc.metadata['filetype'],
+                    doc.metadata['languages']
+                ))
+                document_id = self.cur.fetchone()[0]
 
             # Insert into chunks
             self.cur.execute("""
@@ -52,12 +61,13 @@ class PostgresConnect:
                 """, (chunk_id, content, tag))
 
             # Insert into embeddings
+            embedding_array = embeddings[i].tolist()
             self.cur.execute("""
                 INSERT INTO embeddings (chunk_id, vector_data)
                 VALUES (%s, %s);
             """, (
                 chunk_id,
-                embeddings[i]
+                embedding_array
             ))
 
         self.conn.commit()
